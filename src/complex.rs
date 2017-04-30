@@ -28,7 +28,7 @@ impl Mul for Complex {
 
     fn mul(self, rhs: Self) -> Self {
         Complex {
-            r: self.r * rhs.r + self.i * rhs.i,
+            r: self.r * rhs.r - self.i * rhs.i,
             i: self.r * rhs.i + self.i * rhs.r
         }
     }
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn sq_i() {
-        assert_eq!(Complex::i() * Complex::i(), Complex::new(1.0,0.0));
+        assert_eq!(Complex::i() * Complex::i(), Complex::new(-1.0,0.0));
     }
 
     #[test]

@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Andrew Aylett <andrew@aylett.co.uk>"]
 
 [dependencies]
+image = "0.13.*"
+time = "0.1"

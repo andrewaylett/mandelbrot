@@ -1,5 +1,8 @@
-mod complex;
-mod point;
+extern crate image;
+
+pub mod complex;
+pub mod point;
+pub mod set;
 
 #[cfg(test)]
 mod tests {

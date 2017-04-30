@@ -1,5 +1,6 @@
 use complex::Complex;
 
+#[derive(Clone, Debug)]
 pub struct Point {
     loc: Complex,
     value: Complex,
@@ -32,7 +33,18 @@ impl Point {
 
     pub fn iterate_n(self, n:u64) -> Point {
         let mut v = self;
-        for i in 0..n {
+        for _ in 0..n {
+            if v.escaped {
+                return v;
+            }
+            v = v.iterate();
+        }
+        v
+    }
+
+    pub fn iterate_to_n(self, n:u64) -> Point {
+        let mut v = self;
+        for _ in v.iterations..n {
             if v.escaped {
                 return v;
             }
@@ -45,6 +57,7 @@ impl Point {
 #[cfg(test)]
 mod test {
     use super::Point;
+    use ::complex::Complex;
 
     #[test]
     fn two_is_escaped() {
@@ -59,7 +72,7 @@ mod test {
 
     #[test]
     fn zero_never_escapes() {
-        let mut zero = Point::new(0.0,0.0);
+        let zero = Point::new(0.0,0.0);
         let target_count = 1_000_000;
         let r = zero.iterate_n(target_count);
 
@@ -68,12 +81,33 @@ mod test {
     }
 
     #[test]
-    fn i_escapes() {
-        let mut i = Point::new(0.0, 1.0);
+    fn iterate_to_works() {
+        let zero = Point::new(0.0,0.0);
+        let ten = zero.iterate_n(10);
+        let target_count = 1_000_000;
+        let r = ten.iterate_to_n(target_count);
+
+        assert_eq!(r.escaped, false);
+        assert_eq!(r.iterations, target_count);
+    }
+
+    #[test]
+    fn one_escapes() {
+        let i = Point::new(1.0, 0.0);
         let target_count = 1_000_000;
         let r = i.iterate_n(target_count);
 
         assert_eq!(r.escaped, true);
-        assert_eq!(r.iterations, 2);
+        assert_eq!(r.iterations, 1);
+    }
+
+    #[test]
+    fn iterates_correctly() {
+        let c = Point::new(-1.0, 0.5);
+        let one = c.iterate();
+
+        assert_eq!(one.escaped, false);
+        assert_eq!(one.iterations, 1);
+        assert_eq!(one.value, Complex::new(-0.25, -0.5));
     }
 }
