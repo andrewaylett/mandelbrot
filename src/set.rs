@@ -1,27 +1,32 @@
 use point::Point;
 
 pub struct Set {
-    points: Vec<Point>
+    points: Vec<Point>,
+    size: usize,
 }
 
 impl Set {
-    pub fn create() -> Set {
-        let mut points = vec![Point::new(0.0,0.0); 150*150];
-        let d = 4.0/150.0;
-        for i in 0..150 {
-            for j in 0..150 {
-                let x = d * (i as f64 - 74.5);
-                let y = d * (j as f64 - 74.5);
-                points[j + 150*i] = Point::new(x,y);
+    pub fn create(size:usize) -> Set {
+        let mut points = vec![Point::new(0.0,0.0); size*size];
+        let d = 4.0/(size as f64);
+        let start = (size as f64 / 2.0) + 0.5;
+        for i in 0..size {
+            for j in 0..size {
+                let x = d * (i as f64 - start);
+                let y = d * (j as f64 - start);
+                points[j + size*i] = Point::new(x,y);
             }
         }
-        Set { points }
+        Set { points, size }
     }
 
     pub fn iterate_to(self, n: u64) -> Set {
         let points = self.points.into_iter();
         let new_points = points.map(|p| p.iterate_to_n(n));
-        Set { points: new_points.collect() }
+        Set {
+            points: new_points.collect(),
+            size: self.size,
+        }
     }
 
     pub fn luma_buffer(&self) -> Vec<u8> {
@@ -32,5 +37,9 @@ impl Set {
                 0 as u8
             }
         }).collect()
+    }
+
+    pub fn size(&self) -> u32 {
+        self.size as u32
     }
 }

@@ -8,7 +8,7 @@ use std::path::Path;
 use mandelbrot::set::Set;
 
 fn main() {
-    let set = Set::create().iterate_to(1000);
+    let set = Set::create(300).iterate_to(1000);
 
     let buffer = set.luma_buffer();
     
@@ -16,7 +16,7 @@ fn main() {
     let filename = format!("images/{}.png", timestamp);
     image::save_buffer(&Path::new(&filename),
         &buffer[..],
-        150,
-        150,
+        set.size(),
+        set.size(),
         image::Gray(8)).unwrap();
 }
