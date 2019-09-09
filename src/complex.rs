@@ -1,11 +1,14 @@
-use std::ops::{Mul,Add};
+use std::ops::{Add, Mul};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Complex {r: f64, i: f64}
+pub struct Complex {
+    r: f64,
+    i: f64,
+}
 
 impl Complex {
-    pub fn new(r:f64, i:f64) -> Complex {
-        Complex {r, i}
+    pub fn new(r: f64, i: f64) -> Complex {
+        Complex { r, i }
     }
 
     pub fn escaped(&self) -> bool {
@@ -29,7 +32,7 @@ impl Mul for Complex {
     fn mul(self, rhs: Self) -> Self {
         Complex {
             r: self.r * rhs.r - self.i * rhs.i,
-            i: self.r * rhs.i + self.i * rhs.r
+            i: self.r * rhs.i + self.i * rhs.r,
         }
     }
 }
@@ -40,7 +43,7 @@ impl Add for Complex {
     fn add(self, rhs: Self) -> Self {
         Complex {
             r: self.r + rhs.r,
-            i: self.i + rhs.i
+            i: self.i + rhs.i,
         }
     }
 }
@@ -51,7 +54,7 @@ mod tests {
 
     #[test]
     fn sq_i() {
-        assert_eq!(Complex::i() * Complex::i(), Complex::new(-1.0,0.0));
+        assert_eq!(Complex::i() * Complex::i(), Complex::new(-1.0, 0.0));
     }
 
     #[test]
@@ -68,5 +71,3 @@ mod tests {
         assert_eq!(three * i, Complex::new(0.0, 3.0))
     }
 }
-
-
