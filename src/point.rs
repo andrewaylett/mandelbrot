@@ -1,54 +1,64 @@
-use crate::complex::Complex;
+use complex::Complex;
+use num::{Zero, One};
 
 #[derive(Clone, Debug)]
-pub struct Point {
-    loc: Complex,
-    value: Complex,
+pub struct Point<Unit: One + Zero> {
+    loc: Complex<Unit>,
+    value: Complex<Unit>,
     pub iterations: u64,
     pub escaped: bool,
 }
 
-impl Point {
-    pub fn new(x:f64, y:f64) -> Point {
+impl<Unit: Zero + One> Point<Unit> {
+    pub fn origin() -> Point<Unit> {
+        Point::from_unit(Zero::zero(), Zero::zero())
+    }
+
+    pub fn from_unit(x:Unit, y:Unit) -> Point<Unit> {
+        Point::new(Complex::new(x, y))
+    }
+
+    pub fn new(c:Complex<Unit>  ) -> Point<Unit> {
+        let escaped = c.escaped();
         Point {
-            loc: Complex::new(x, y),
-            value: Complex::new(x,y),
+            loc: c.clone(),
+            value: c,
             iterations: 0,
-            escaped: Complex::new(x,y).escaped(),
+            escaped,
         }
     }
 
-    pub fn iterate(self) -> Point {
+    pub fn from_integers(x: i64, y:i64) -> Point<Unit> {
+        Point::from_unit(From::from(x), From::from(y))
+    }
+
+    pub fn iterate(&mut self) {
         if !self.escaped {
-            let new_value = self.value * self.value + self.loc;
-            return Point {
-                loc: self.loc,
-                iterations: self.iterations + 1,
-                value: new_value,
-                escaped: new_value.escaped(),
-            }
+            self.value *= &self.value;
+            self.value += &self.loc;
+            self.escaped = self.value.escaped();
+            self.iterations += 1;
         }
-        self
     }
 
-    pub fn iterate_n(self, n:u64) -> Point {
-        let mut v = self;
+    pub fn iterate_n(self, n:u64) -> Point<Unit> {
+        let mut v = self.clone();
         for _ in 0..n {
             if v.escaped {
                 return v;
             }
-            v = v.iterate();
+            v.iterate();
         }
         v
     }
 
-    pub fn iterate_to_n(self, n:u64) -> Point {
-        let mut v = self;
+    pub fn iterate_to_n(self, n:u64) -> Point<Unit> {
+        let mut v = self.clone();
         for _ in v.iterations..n {
             if v.escaped {
                 return v;
             }
-            v = v.iterate();
+            v.iterate();
         }
         v
     }
@@ -61,7 +71,7 @@ mod test {
 
     #[test]
     fn two_is_escaped() {
-        let two = Point::new(2.0,0.0);
+        let two = Point::from_integers(2,0);
         
         assert_eq!(two.escaped, true);
         assert_eq!(two.iterations, 0);
@@ -72,7 +82,7 @@ mod test {
 
     #[test]
     fn zero_never_escapes() {
-        let zero = Point::new(0.0,0.0);
+        let zero = Point::origin();
         let target_count = 1_000_000;
         let r = zero.iterate_n(target_count);
 
@@ -82,7 +92,7 @@ mod test {
 
     #[test]
     fn iterate_to_works() {
-        let zero = Point::new(0.0,0.0);
+        let zero = Point::origin();
         let ten = zero.iterate_n(10);
         let target_count = 1_000_000;
         let r = ten.iterate_to_n(target_count);
@@ -93,7 +103,7 @@ mod test {
 
     #[test]
     fn one_escapes() {
-        let i = Point::new(1.0, 0.0);
+        let i = Point::from_integers(1, 0);
         let target_count = 1_000_000;
         let r = i.iterate_n(target_count);
 
@@ -103,11 +113,11 @@ mod test {
 
     #[test]
     fn iterates_correctly() {
-        let c = Point::new(-1.0, 0.5);
-        let one = c.iterate();
+        let mut c: Point<f64> = Point::from_unit(-1f64, 0.5f64);
+        c.iterate();
 
-        assert_eq!(one.escaped, false);
-        assert_eq!(one.iterations, 1);
-        assert_eq!(one.value, Complex::new(-0.25, -0.5));
+        assert_eq!(c.escaped, false);
+        assert_eq!(c.iterations, 1);
+        assert_eq!(c.value, Complex::new(-0.25f64, -0.5f64));
     }
 }
