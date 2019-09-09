@@ -9,12 +9,12 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn new(x: f64, y: f64) -> Point {
+    pub fn new(x:f64, y:f64) -> Point {
         Point {
             loc: Complex::new(x, y),
-            value: Complex::new(x, y),
+            value: Complex::new(x,y),
             iterations: 0,
-            escaped: Complex::new(x, y).escaped(),
+            escaped: Complex::new(x,y).escaped(),
         }
     }
 
@@ -26,12 +26,12 @@ impl Point {
                 iterations: self.iterations + 1,
                 value: new_value,
                 escaped: new_value.escaped(),
-            };
+            }
         }
         self
     }
 
-    pub fn iterate_n(self, n: u64) -> Point {
+    pub fn iterate_n(self, n:u64) -> Point {
         let mut v = self;
         for _ in 0..n {
             if v.escaped {
@@ -42,7 +42,7 @@ impl Point {
         v
     }
 
-    pub fn iterate_to_n(self, n: u64) -> Point {
+    pub fn iterate_to_n(self, n:u64) -> Point {
         let mut v = self;
         for _ in v.iterations..n {
             if v.escaped {
@@ -61,8 +61,8 @@ mod test {
 
     #[test]
     fn two_is_escaped() {
-        let two = Point::new(2.0, 0.0);
-
+        let two = Point::new(2.0,0.0);
+        
         assert_eq!(two.escaped, true);
         assert_eq!(two.iterations, 0);
 
@@ -72,7 +72,7 @@ mod test {
 
     #[test]
     fn zero_never_escapes() {
-        let zero = Point::new(0.0, 0.0);
+        let zero = Point::new(0.0,0.0);
         let target_count = 1_000_000;
         let r = zero.iterate_n(target_count);
 
@@ -82,7 +82,7 @@ mod test {
 
     #[test]
     fn iterate_to_works() {
-        let zero = Point::new(0.0, 0.0);
+        let zero = Point::new(0.0,0.0);
         let ten = zero.iterate_n(10);
         let target_count = 1_000_000;
         let r = ten.iterate_to_n(target_count);
