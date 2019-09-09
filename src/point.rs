@@ -1,5 +1,5 @@
 use complex::Complex;
-use num::{Zero, One};
+use num::{One, Zero};
 
 #[derive(Clone, Debug)]
 pub struct Point<Unit: One + Zero> {
@@ -14,11 +14,11 @@ impl<Unit: Zero + One> Point<Unit> {
         Point::from_unit(Zero::zero(), Zero::zero())
     }
 
-    pub fn from_unit(x:Unit, y:Unit) -> Point<Unit> {
+    pub fn from_unit(x: Unit, y: Unit) -> Point<Unit> {
         Point::new(Complex::new(x, y))
     }
 
-    pub fn new(c:Complex<Unit>  ) -> Point<Unit> {
+    pub fn new(c: Complex<Unit>) -> Point<Unit> {
         let escaped = c.escaped();
         Point {
             loc: c.clone(),
@@ -28,7 +28,7 @@ impl<Unit: Zero + One> Point<Unit> {
         }
     }
 
-    pub fn from_integers(x: i64, y:i64) -> Point<Unit> {
+    pub fn from_integers(x: i64, y: i64) -> Point<Unit> {
         Point::from_unit(From::from(x), From::from(y))
     }
 
@@ -41,7 +41,7 @@ impl<Unit: Zero + One> Point<Unit> {
         }
     }
 
-    pub fn iterate_n(self, n:u64) -> Point<Unit> {
+    pub fn iterate_n(self, n: u64) -> Point<Unit> {
         let mut v = self.clone();
         for _ in 0..n {
             if v.escaped {
@@ -52,7 +52,7 @@ impl<Unit: Zero + One> Point<Unit> {
         v
     }
 
-    pub fn iterate_to_n(self, n:u64) -> Point<Unit> {
+    pub fn iterate_to_n(self, n: u64) -> Point<Unit> {
         let mut v = self.clone();
         for _ in v.iterations..n {
             if v.escaped {
@@ -71,8 +71,8 @@ mod test {
 
     #[test]
     fn two_is_escaped() {
-        let two = Point::from_integers(2,0);
-        
+        let two = Point::from_integers(2, 0);
+
         assert_eq!(two.escaped, true);
         assert_eq!(two.iterations, 0);
 
