@@ -1,4 +1,4 @@
-use point::Point;
+use crate::point::Point;
 
 pub struct Set {
     points: Vec<Point>,

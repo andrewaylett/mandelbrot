@@ -1,4 +1,4 @@
-use complex::Complex;
+use crate::complex::Complex;
 
 #[derive(Clone, Debug)]
 pub struct Point {
@@ -57,7 +57,7 @@ impl Point {
 #[cfg(test)]
 mod test {
     use super::Point;
-    use ::complex::Complex;
+    use crate::complex::Complex;
 
     #[test]
     fn two_is_escaped() {
