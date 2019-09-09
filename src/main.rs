@@ -7,7 +7,6 @@ extern crate num;
 use std::path::Path;
 
 use mandelbrot::set::Set;
-use num::BigRational;
 
 fn main() {
     let over = 20;
@@ -15,7 +14,7 @@ fn main() {
         "Going to go for {} past the maximum seen escape point\n",
         over
     );
-    let set: Set<BigRational> = Set::create(300).iterate_as_required(over);
+    let set: Set<f64> = Set::create(300).iterate_as_required(over);
 
     let buffer = set.luma_buffer();
 

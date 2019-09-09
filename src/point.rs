@@ -1,21 +1,21 @@
-use complex::Complex;
-use num::{One, Zero};
+use crate::complex::{Complex, Part};
+use num::{Zero};
 
-#[derive(Clone, Debug)]
-pub struct Point<Unit: One + Zero> {
+#[derive(Copy, Clone, Debug)]
+pub struct Point<Unit: Part> {
     loc: Complex<Unit>,
     value: Complex<Unit>,
     pub iterations: u64,
     pub escaped: bool,
 }
 
-impl<Unit: Zero + One> Point<Unit> {
+impl<Unit: Part> Point<Unit> {
     pub fn origin() -> Point<Unit> {
-        Point::from_unit(Zero::zero(), Zero::zero())
+        Point::new(Complex::new(Zero::zero(), Zero::zero()))
     }
 
-    pub fn from_unit(x: Unit, y: Unit) -> Point<Unit> {
-        Point::new(Complex::new(x, y))
+    pub fn from_parts<T: Into<Unit>>(x: T, y: T) -> Point<Unit> {
+        Point::new(Complex::new(x.into(), y.into()))
     }
 
     pub fn new(c: Complex<Unit>) -> Point<Unit> {
@@ -28,14 +28,10 @@ impl<Unit: Zero + One> Point<Unit> {
         }
     }
 
-    pub fn from_integers(x: i64, y: i64) -> Point<Unit> {
-        Point::from_unit(From::from(x), From::from(y))
-    }
-
     pub fn iterate(&mut self) {
         if !self.escaped {
-            self.value *= &self.value;
-            self.value += &self.loc;
+            self.value *= self.value;
+            self.value += self.loc;
             self.escaped = self.value.escaped();
             self.iterations += 1;
         }
@@ -71,7 +67,7 @@ mod test {
 
     #[test]
     fn two_is_escaped() {
-        let two = Point::from_integers(2, 0);
+        let two:Point<i64> = Point::from_parts(2i64, 0i64);
 
         assert_eq!(two.escaped, true);
         assert_eq!(two.iterations, 0);
@@ -82,7 +78,7 @@ mod test {
 
     #[test]
     fn zero_never_escapes() {
-        let zero = Point::origin();
+        let zero:Point<i64> = Point::origin();
         let target_count = 1_000_000;
         let r = zero.iterate_n(target_count);
 
@@ -92,7 +88,7 @@ mod test {
 
     #[test]
     fn iterate_to_works() {
-        let zero = Point::origin();
+        let zero:Point<i64> = Point::origin();
         let ten = zero.iterate_n(10);
         let target_count = 1_000_000;
         let r = ten.iterate_to_n(target_count);
@@ -103,7 +99,7 @@ mod test {
 
     #[test]
     fn one_escapes() {
-        let i = Point::from_integers(1, 0);
+        let i:Point<i64> = Point::from_parts(1, 0);
         let target_count = 1_000_000;
         let r = i.iterate_n(target_count);
 
@@ -113,7 +109,7 @@ mod test {
 
     #[test]
     fn iterates_correctly() {
-        let mut c: Point<f64> = Point::from_unit(-1f64, 0.5f64);
+        let mut c: Point<f64> = Point::from_parts(-1f64, 0.5f64);
         c.iterate();
 
         assert_eq!(c.escaped, false);

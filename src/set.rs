@@ -1,29 +1,34 @@
-use num::{One, Zero};
-use point::Point;
+use crate::point::Point;
+use crate::complex::Part;
+use std::ops::Div;
 
-pub struct Set<Unit: Zero + One> {
+pub struct Set<Unit: Part> {
     points: Vec<Point<Unit>>,
     size: usize,
 }
 
-impl<Unit: Zero + One> Set<Unit> {
+impl<Unit: Part + Div + From<i32>> Set<Unit> {
     pub fn create(size: usize) -> Set<Unit> {
         print!("Starting to allocate\n");
         let mut points = vec![Point::origin(); size * size];
         assert_eq!(size % 4, 0);
 
-        let d: i64 = size as i64 / 2; // Four wide, but need twice the precision to hit the middle of each pixel
-        let start: i64 = d as i64 * -2 + 1;
+        let d: Unit = From::from(size as i32 / 2); // Four wide, but need twice the precision to hit the middle of each pixel
+        let start: i32 = (size as i32 / 2) * -2 + 1;
         for i in 0..size {
             for j in 0..size {
-                let x = Unit::new(From::from(start + 2 * i as i64), From::from(d));
-                let y = Unit::new(From::from(start + 2 * j as i64), From::from(d));
-                points[j + size * i] = Point::from_unit(x, y);
+                let xi: Unit = (start + 2 * i as i32).into();
+                let x: Unit =  xi / d;
+                let yi: Unit = (start + 2 * j as i32).into();
+                let y: Unit = yi / d;
+                points[j + size * i] = Point::from_parts(x, y);
             }
         }
         Set { points, size }
     }
+}
 
+impl<Unit: Part> Set<Unit> {
     pub fn iterate_to(self, n: u64) -> Set<Unit> {
         let points = self.points.into_iter();
         let new_points = points.map(|p| p.iterate_to_n(n));
