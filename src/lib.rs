@@ -2,6 +2,7 @@ extern crate image;
 extern crate num;
 
 pub mod complex;
+pub mod extending;
 pub mod point;
 pub mod set;
 
