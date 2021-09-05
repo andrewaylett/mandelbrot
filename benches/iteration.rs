@@ -1,7 +1,7 @@
 use anyhow::Error;
 use iai::{black_box, main};
 
-use mandelbrot::complex::{Complex, FixResult};
+use mandelbrot::complex::Complex;
 use mandelbrot::fix::fix2x61::Fix2x61;
 use mandelbrot::point::Point;
 use mandelbrot::set::Set;

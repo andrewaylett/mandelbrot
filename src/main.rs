@@ -25,6 +25,8 @@ struct Args {
     radius: f64,
     #[structopt(default_value = "7", short, long)]
     size: usize,
+    #[structopt(short, long)]
+    file: Option<String>,
 }
 
 fn main() -> Result<(), Error> {
@@ -44,8 +46,19 @@ fn main() -> Result<(), Error> {
 
     let buffer = set.luma_buffer();
 
-    let timestamp = time::get_time().sec;
-    let filename = format!("images/{}.png", timestamp);
+    let filename = if let Some(name) = args.file {
+        name
+    } else {
+        let timestamp = time::get_time().sec;
+        format!("images/{}.png", timestamp)
+    };
+
+    let filename = if filename.ends_with(".png") {
+        filename
+    } else {
+        format!("{}.png", filename)
+    };
+
     image::save_buffer(
         &Path::new(&filename),
         &buffer[..],
