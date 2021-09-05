@@ -213,10 +213,6 @@ impl Complex {
         Ok(Complex::new(r, i))
     }
 
-    fn one() -> Self {
-        Complex::new(Fix2x61::one(), Fix2x61::zero())
-    }
-
     pub fn iterate_mandelbrot(&self, loc: &Complex) -> FixResult<Complex> {
         let r = self.r;
         let i = self.i;
@@ -228,7 +224,7 @@ impl Complex {
         let (r, i) = ((r + From::from(loc.r))?, (i + From::from(loc.i))?);
 
         let overflow_escapes = |e| {
-            if let FixError::OverFlow { op } = e {
+            if let FixError::OverFlow { op: _ } = e {
                 FixError::Escaped
             } else {
                 e

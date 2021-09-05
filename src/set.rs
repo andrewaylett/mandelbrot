@@ -1,4 +1,4 @@
-use crate::complex::{Complex, Fix2x61, FixResult};
+use crate::complex::{Complex, Fix2x61};
 use crate::point::Point;
 use anyhow::{Context, Error};
 use std::mem::size_of_val;
@@ -10,7 +10,7 @@ pub struct Set {
 
 impl Set {
     pub fn create(size_power_of_two: usize) -> Result<Set, Error> {
-        print!("Starting to allocate\n");
+        println!("Starting to allocate");
         assert!(
             size_power_of_two >= 2 && size_power_of_two < (size_of_val(&size_power_of_two) * 8)
         );
@@ -52,13 +52,13 @@ impl Set {
     }
 
     pub fn iterate_as_required(self, over: u64) -> Result<Set, Error> {
-        print!("Starting to iterate\n");
+        println!("Starting to iterate");
         let mut target = 0;
         let mut maximum_non_escaped: u64 = 0;
         let mut new_points = self.points;
         while maximum_non_escaped + over > target {
             target = maximum_non_escaped + over;
-            print!("Aiming for {} iterations\n", target);
+            println!("Aiming for {} iterations", target);
             let points = new_points.into_iter();
             new_points = points
                 .map(|p| {
@@ -73,7 +73,7 @@ impl Set {
                 .max()
                 .unwrap();
         }
-        print!("Saw maximum {} iterations\n", maximum_non_escaped);
+        println!("Saw maximum {} iterations", maximum_non_escaped);
         Ok(Set {
             points: new_points,
             size: self.size,
@@ -87,7 +87,7 @@ impl Set {
                 if p.escaped {
                     ((p.iterations % 255) + 1) as u8
                 } else {
-                    0 as u8
+                    0
                 }
             })
             .collect()

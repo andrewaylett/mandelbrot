@@ -1,6 +1,5 @@
-use num_traits::{Bounded, Num, PrimInt};
-use std::ops::{Mul, Not};
-use std::process::Output;
+use num_traits::{Bounded, PrimInt};
+use std::ops::Not;
 
 trait Bigger: PrimInt {
     type Larger: PrimInt;

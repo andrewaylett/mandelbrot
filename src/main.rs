@@ -11,11 +11,11 @@ use mandelbrot::set::Set;
 
 fn main() -> Result<(), Error> {
     let over = 20;
-    print!(
-        "Going to go for {} past the maximum seen escape point\n",
+    println!(
+        "Going to go for {} past the maximum seen escape point",
         over
     );
-    let set: Set = Set::create(10)
+    let set: Set = Set::create(11)
         .context("Creating the set")?
         .iterate_as_required(over)?;
 

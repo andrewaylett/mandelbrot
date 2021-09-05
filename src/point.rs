@@ -1,4 +1,4 @@
-use crate::complex::{Complex, Fix2x61, FixError, FixResult};
+use crate::complex::{Complex, Fix2x61, FixError};
 use anyhow::{Context, Error};
 
 #[derive(Copy, Clone, Debug)]
@@ -21,7 +21,7 @@ impl Point {
     pub fn new(c: Complex) -> Point {
         let escaped = false; //c.escaped();
         Point {
-            loc: c.clone(),
+            loc: c,
             value: c,
             iterations: 0,
             escaped,
@@ -43,7 +43,7 @@ impl Point {
     }
 
     pub fn iterate_n(self, n: u64) -> Result<Point, Error> {
-        let mut v = self.clone();
+        let mut v = self;
         for i in 0..n {
             if v.escaped {
                 return Ok(v);
@@ -59,7 +59,7 @@ impl Point {
     }
 
     pub fn iterate_to_n(self, n: u64) -> Result<Point, Error> {
-        let mut v = self.clone();
+        let mut v = self;
         for i in v.iterations..n {
             if v.escaped {
                 return Ok(v);
@@ -82,7 +82,7 @@ impl Point {
 #[cfg(test)]
 mod test {
     use super::Point;
-    use crate::complex::{Complex, Fix2x61, FixResult};
+    use crate::complex::{Complex, Fix2x61};
     use anyhow::Error;
     use std::convert::TryInto;
 
