@@ -19,7 +19,7 @@ impl Set {
             size_power_of_two >= 2 && size_power_of_two < (size_of_val(&size_power_of_two) * 8)
         );
         let size = 1 << size_power_of_two;
-        let mut points = vec![Point::origin(); size * size];
+        let mut points = vec![Point::ORIGIN; size * size];
         assert_eq!(size % 4, 0);
 
         // d is half the distance between the points we'll sample.

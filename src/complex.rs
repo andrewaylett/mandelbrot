@@ -41,9 +41,7 @@ pub type FixResult<T> = Result<T, FixError>;
 impl Fix4x123 {
     // One sign bit, four int bits, 123 mantissa bits
 
-    pub const fn zero() -> Self {
-        Fix4x123(0)
-    }
+    pub const ZERO: Self = Fix4x123(0);
 
     pub const fn one() -> Self {
         Fix4x123(1 << 123)
@@ -68,7 +66,7 @@ impl Fix4x123 {
 
 impl Default for Fix4x123 {
     fn default() -> Self {
-        Fix4x123::zero()
+        Fix4x123::ZERO
     }
 }
 
@@ -215,10 +213,6 @@ const fn overflow_escapes(e: FixError) -> FixError {
 impl Complex {
     pub const fn new(r: Fix2x61, i: Fix2x61) -> Complex {
         Complex { r, i }
-    }
-
-    pub const fn i() -> Complex {
-        Complex::new(Fix2x61::zero(), Fix2x61::one())
     }
 
     pub fn iterate_mandelbrot(&self, loc: &Complex) -> FixResult<Complex> {

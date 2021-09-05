@@ -10,9 +10,7 @@ pub struct Point {
 }
 
 impl Point {
-    pub const fn origin() -> Point {
-        Point::new(Complex::new(Fix2x61::zero(), Fix2x61::zero()))
-    }
+    pub const ORIGIN: Point = Point::new(Complex::new(Fix2x61::zero(), Fix2x61::zero()));
 
     pub fn from_parts(x: &Fix2x61, y: &Fix2x61) -> Point {
         Point::new(Complex::new(*x, *y))
@@ -99,7 +97,7 @@ mod test {
 
     #[test]
     fn zero_never_escapes() -> Result<(), Error> {
-        let zero: Point = Point::origin();
+        let zero: Point = Point::ORIGIN;
         let target_count = 1_000_000;
         let r = zero.iterate_n(target_count)?;
 
@@ -110,7 +108,7 @@ mod test {
 
     #[test]
     fn iterate_to_works() -> Result<(), Error> {
-        let zero: Point = Point::origin();
+        let zero: Point = Point::ORIGIN;
         let ten = zero.iterate_n(10)?;
         let target_count = 1_000_000;
         let r = ten.iterate_to_n(target_count)?;
