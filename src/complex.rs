@@ -1,32 +1,12 @@
+use std::convert::TryInto;
+use std::str::FromStr;
+
+use anyhow::bail;
 use num::abs;
-use std::convert::TryFrom;
-use std::fmt::{Debug, Formatter};
-use std::ops::{Add, Mul, Neg, Sub};
 use thiserror::Error;
 
-#[derive(Copy, Debug, Clone, PartialEq)]
-pub struct Fix4x123(i128);
-#[derive(Copy, Clone, PartialEq)]
-pub struct Fix2x61(i64);
-
-impl Fix2x61 {
-    const fn try_from_i8(value: i8) -> Result<Fix2x61, FixError> {
-        if value >= 4 || value <= -4 {
-            Err(FixError::OverFlow {
-                op: "Fix2x61::try_from(i8)",
-            })
-        } else {
-            Ok(Fix2x61((value as i64) << 61))
-        }
-    }
-}
-
-impl Debug for Fix2x61 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let display_value = (self.0 as f64) / ((1i64 << 61) as f64);
-        f.debug_tuple("Fix2x61").field(&display_value).finish()
-    }
-}
+use crate::fix::fix2x61::Fix2x61;
+use crate::fix::fix4x123::Fix4x123;
 
 #[derive(Clone, Debug, Error)]
 pub enum FixError {
@@ -38,168 +18,26 @@ pub enum FixError {
 
 pub type FixResult<T> = Result<T, FixError>;
 
-impl Fix4x123 {
-    // One sign bit, four int bits, 123 mantissa bits
-
-    pub const ZERO: Self = Fix4x123(0);
-
-    pub const fn one() -> Self {
-        Fix4x123(1 << 123)
-    }
-
-    pub const fn two() -> Self {
-        Fix4x123(1 << 124)
-    }
-
-    pub const fn four() -> Self {
-        Fix4x123(1 << 125)
-    }
-
-    pub const fn truncate(&self) -> FixResult<Fix2x61> {
-        if self.0 < Fix4x123::four().0 && self.0 > -(Fix4x123::four().0) {
-            Ok(Fix2x61((self.0 >> 62) as i64))
-        } else {
-            Err(FixError::OverFlow { op: "truncate" })
-        }
-    }
-}
-
-impl Default for Fix4x123 {
-    fn default() -> Self {
-        Fix4x123::ZERO
-    }
-}
-
-impl Default for Fix2x61 {
-    fn default() -> Self {
-        Fix2x61::zero()
-    }
-}
-
-impl Neg for Fix2x61 {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        Fix2x61(-self.0)
-    }
-}
-
-impl Fix2x61 {
-    // One sign bit, two int bits, 61 mantissa bits
-
-    pub const fn zero() -> Self {
-        Fix2x61(0)
-    }
-
-    pub const fn one() -> Self {
-        Fix2x61(1 << 61)
-    }
-
-    pub const fn two() -> Self {
-        Fix2x61(1 << 62)
-    }
-
-    pub const fn power_of_two(pow: i8) -> FixResult<Self> {
-        if pow > 2 || pow < -61 {
-            Err(FixError::OverFlow { op: "power_of_two" })
-        } else {
-            Ok(Fix2x61(1 << (61 + pow)))
-        }
-    }
-}
-
-impl Add for Fix4x123 {
-    type Output = FixResult<Self>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        if let Some(res) = self.0.checked_add(rhs.0) {
-            Ok(Self(res))
-        } else {
-            Err(FixError::OverFlow {
-                op: "Fix4x123::add",
-            })
-        }
-    }
-}
-
-impl Sub for Fix4x123 {
-    type Output = FixResult<Self>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        if let Some(res) = self.0.checked_sub(rhs.0) {
-            Ok(Self(res))
-        } else {
-            Err(FixError::OverFlow {
-                op: "Fix4x123::sub",
-            })
-        }
-    }
-}
-
-impl Add for Fix2x61 {
-    type Output = FixResult<Self>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        if let Some(res) = self.0.checked_add(rhs.0) {
-            Ok(Self(res))
-        } else {
-            Err(FixError::OverFlow { op: "Fix2x61::add" })
-        }
-    }
-}
-
-impl Sub for Fix2x61 {
-    type Output = FixResult<Self>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        if let Some(res) = self.0.checked_sub(rhs.0) {
-            Ok(Self(res))
-        } else {
-            Err(FixError::OverFlow { op: "Fix2x61::sub" })
-        }
-    }
-}
-
-impl Mul for Fix2x61 {
-    type Output = Fix4x123;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Fix4x123((self.0 as i128 * rhs.0 as i128) << 1)
-    }
-}
-
-impl TryFrom<i8> for Fix2x61 {
-    type Error = FixError;
-
-    fn try_from(value: i8) -> Result<Self, Self::Error> {
-        Fix2x61::try_from_i8(value)
-    }
-}
-
-impl TryFrom<f64> for Fix2x61 {
-    type Error = FixError;
-
-    fn try_from(value: f64) -> Result<Self, Self::Error> {
-        if abs(value) >= 4.0 {
-            Err(FixError::OverFlow {
-                op: "Fix2x61::try_from(f64)",
-            })
-        } else {
-            Ok(Fix2x61((value * (1i64 << 61) as f64) as i64))
-        }
-    }
-}
-
-impl From<Fix2x61> for Fix4x123 {
-    fn from(val: Fix2x61) -> Self {
-        Fix4x123((val.0 as i128) << 62)
-    }
-}
-
 #[derive(Copy, Debug, Clone, PartialEq)]
 pub struct Complex {
     pub r: Fix2x61,
     pub i: Fix2x61,
+}
+
+impl FromStr for Complex {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let split: Vec<&str> = s.split(',').collect();
+        if split.len() != 2 {
+            bail!("Must supply a complex in the form '0.0,0.0'")
+        }
+
+        let r = f64::from_str(split[0])?;
+        let i = f64::from_str(split[1])?;
+
+        Ok(Complex::new(r.try_into()?, i.try_into()?))
+    }
 }
 
 const fn overflow_escapes(e: FixError) -> FixError {
@@ -249,9 +87,13 @@ impl Default for Complex {
 
 #[cfg(test)]
 mod tests {
-    use super::Complex;
-    use crate::complex::{Fix2x61, Fix4x123, FixResult};
     use std::convert::{TryFrom, TryInto};
+
+    use crate::complex::FixResult;
+    use crate::fix::fix2x61::Fix2x61;
+    use crate::fix::fix4x123::Fix4x123;
+
+    use super::Complex;
 
     #[test]
     fn add_fix_64() -> FixResult<()> {

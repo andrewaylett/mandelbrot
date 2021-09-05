@@ -3,6 +3,7 @@ extern crate num;
 
 pub mod complex;
 pub mod extending;
+pub mod fix;
 pub mod point;
 pub mod set;
 

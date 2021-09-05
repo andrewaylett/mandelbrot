@@ -1,5 +1,7 @@
-use crate::complex::{Complex, Fix2x61, FixError};
 use anyhow::{Context, Error};
+
+use crate::complex::{Complex, FixError};
+use crate::fix::fix2x61::Fix2x61;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Point {
@@ -80,10 +82,14 @@ impl Point {
 
 #[cfg(test)]
 mod test {
-    use super::Point;
-    use crate::complex::{Complex, Fix2x61};
-    use anyhow::Error;
     use std::convert::TryInto;
+
+    use anyhow::Error;
+
+    use crate::complex::Complex;
+    use crate::fix::fix2x61::Fix2x61;
+
+    use super::Point;
 
     // #[test]
     // fn two_is_escaped() {

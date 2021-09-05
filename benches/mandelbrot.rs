@@ -1,6 +1,8 @@
 use anyhow::{Context, Error};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use mandelbrot::complex::{Complex, Fix2x61, FixResult};
+
+use mandelbrot::complex::{Complex, FixResult};
+use mandelbrot::fix::fix2x61::Fix2x61;
 use mandelbrot::set::Set;
 
 fn bench_render(c: &mut Criterion) {

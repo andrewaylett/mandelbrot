@@ -1,7 +1,10 @@
-use crate::complex::{Complex, Fix2x61};
-use crate::point::Point;
-use anyhow::{Context, Error};
 use std::mem::size_of_val;
+
+use anyhow::{Context, Error};
+
+use crate::complex::Complex;
+use crate::fix::fix2x61::Fix2x61;
+use crate::point::Point;
 
 pub struct Set {
     points: Vec<Point>,
