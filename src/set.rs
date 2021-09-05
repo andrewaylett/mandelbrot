@@ -1,6 +1,7 @@
 use std::mem::size_of_val;
 
 use anyhow::{Context, Error};
+use rayon::prelude::*;
 
 use crate::complex::Complex;
 use crate::fix::fix2x61::Fix2x61;
@@ -63,9 +64,9 @@ impl Set {
         while maximum_non_escaped + over > target {
             target = maximum_non_escaped + over;
             //println!("Aiming for {} iterations", target);
-            let points = new_points.into_iter();
+            let points = new_points.into_par_iter();
             new_points = points
-                .map(|p| {
+                .map(|p: Point| {
                     p.iterate_to_n(target)
                         .with_context(|| format!("Iterating point {:?}", p.value()))
                         .unwrap()

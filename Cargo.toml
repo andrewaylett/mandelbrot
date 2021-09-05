@@ -11,6 +11,7 @@ num = "0.2.0"
 num-traits = "0.2.8"
 thiserror = "1.0.26"
 anyhow = "1.0.43"
+rayon = "1.5.1"
 
 [dependencies.structopt]
 version = "~0.3"
