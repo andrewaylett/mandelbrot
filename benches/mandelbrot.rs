@@ -18,9 +18,11 @@ fn bench_render(c: &mut Criterion) {
 
 fn bench_iterate(c: &mut Criterion) {
     let zero = Complex::new(Fix2x61::zero(), Fix2x61::zero());
+    let z1 = black_box(zero);
+    let z2 = black_box(zero);
 
     c.bench_function("iterate zero", |b| {
-        b.iter(|| -> FixResult<Complex> { black_box(zero).iterate_mandelbrot(&black_box(zero)) })
+        b.iter(|| -> FixResult<Complex> { z1.iterate_mandelbrot(&z2) })
     });
 }
 

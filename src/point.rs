@@ -26,6 +26,7 @@ impl Point {
         }
     }
 
+    // Microbenchmarks suggest no benefit from an inline attribute
     pub fn iterate(&mut self) -> Result<(), Error> {
         if !self.escaped {
             let iterated = self.value.iterate_mandelbrot(&self.loc);

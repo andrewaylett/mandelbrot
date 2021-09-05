@@ -215,6 +215,7 @@ impl Complex {
         Complex { r, i }
     }
 
+    #[inline(always)] // Microbenchmarks suggest inlining slows down single iterations but speeds up full renders
     pub fn iterate_mandelbrot(&self, loc: &Complex) -> FixResult<Complex> {
         let r = self.r;
         let i = self.i;

@@ -1,22 +1,18 @@
 use anyhow::Error;
 use iai::{black_box, main};
 use mandelbrot::complex::{Complex, Fix2x61, FixResult};
+use mandelbrot::point::Point;
 use mandelbrot::set::Set;
 
-const ZERO: Complex = Complex::new(Fix2x61::zero(), Fix2x61::zero());
-
-fn iai_benchmark_zero_five_times() -> FixResult<Complex> {
-    let z = black_box(ZERO);
-    black_box(ZERO)
-        .iterate_mandelbrot(&z)?
-        .iterate_mandelbrot(&z)?
-        .iterate_mandelbrot(&z)?
-        .iterate_mandelbrot(&z)?
-        .iterate_mandelbrot(&z)
+fn iai_benchmark_zero_five_times() -> Result<Point, Error> {
+    let p: Point = black_box(Point::ORIGIN);
+    p.iterate_n(5)
 }
 
-fn iai_benchmark_zero() -> FixResult<Complex> {
-    black_box(ZERO).iterate_mandelbrot(&black_box(ZERO))
+fn iai_benchmark_zero() -> Result<Point, Error> {
+    let mut p: Point = black_box(Point::ORIGIN);
+    p.iterate()?;
+    Ok(p)
 }
 
 fn iai_benchmark_full_set_render() -> Result<Set, Error> {
