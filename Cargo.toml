@@ -11,3 +11,10 @@ num = "0.2.0"
 num-traits = "0.2.8"
 thiserror = "1.0.26"
 anyhow = "1.0.43"
+
+[dev-dependencies]
+criterion = "0.3.5"
+
+[[bench]]
+name = "mandelbrot"
+harness = false

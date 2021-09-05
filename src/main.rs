@@ -7,6 +7,7 @@ extern crate num;
 use std::path::Path;
 
 use anyhow::{Context, Error};
+use mandelbrot::complex::{Complex, Fix2x61};
 use mandelbrot::set::Set;
 
 fn main() -> Result<(), Error> {
@@ -15,7 +16,11 @@ fn main() -> Result<(), Error> {
         "Going to go for {} past the maximum seen escape point",
         over
     );
-    let set: Set = Set::create(11)
+
+    let centre = Complex::new(Fix2x61::zero(), Fix2x61::zero());
+    let radius = Fix2x61::two();
+
+    let set: Set = Set::create(11, centre, radius)
         .context("Creating the set")?
         .iterate_as_required(over)?;
 

@@ -10,15 +10,15 @@ pub struct Point {
 }
 
 impl Point {
-    pub fn origin() -> Point {
-        Point::new(Complex::new(Default::default(), Default::default()))
+    pub const fn origin() -> Point {
+        Point::new(Complex::new(Fix2x61::zero(), Fix2x61::zero()))
     }
 
     pub fn from_parts(x: &Fix2x61, y: &Fix2x61) -> Point {
         Point::new(Complex::new(*x, *y))
     }
 
-    pub fn new(c: Complex) -> Point {
+    pub const fn new(c: Complex) -> Point {
         let escaped = false; //c.escaped();
         Point {
             loc: c,

@@ -1,5 +1,5 @@
 use num::abs;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Add, Mul, Neg, Sub};
 use thiserror::Error;
@@ -8,6 +8,18 @@ use thiserror::Error;
 pub struct Fix4x123(i128);
 #[derive(Copy, Clone, PartialEq)]
 pub struct Fix2x61(i64);
+
+impl Fix2x61 {
+    const fn try_from_i8(value: i8) -> Result<Fix2x61, FixError> {
+        if value >= 4 || value <= -4 {
+            Err(FixError::OverFlow {
+                op: "Fix2x61::try_from(i8)",
+            })
+        } else {
+            Ok(Fix2x61((value as i64) << 61))
+        }
+    }
+}
 
 impl Debug for Fix2x61 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -45,8 +57,8 @@ impl Fix4x123 {
         Fix4x123(1 << 125)
     }
 
-    pub fn truncate(&self) -> FixResult<Fix2x61> {
-        if abs(self.0) < Fix4x123::four().0 {
+    pub const fn truncate(&self) -> FixResult<Fix2x61> {
+        if self.0 < Fix4x123::four().0 && self.0 > -(Fix4x123::four().0) {
             Ok(Fix2x61((self.0 >> 62) as i64))
         } else {
             Err(FixError::OverFlow { op: "truncate" })
@@ -162,13 +174,7 @@ impl TryFrom<i8> for Fix2x61 {
     type Error = FixError;
 
     fn try_from(value: i8) -> Result<Self, Self::Error> {
-        if abs(value) >= 4 {
-            Err(FixError::OverFlow {
-                op: "Fix2x61::try_from(i8)",
-            })
-        } else {
-            Ok(Fix2x61((value as i64) << 61))
-        }
+        Fix2x61::try_from_i8(value)
     }
 }
 
@@ -198,19 +204,21 @@ pub struct Complex {
     pub i: Fix2x61,
 }
 
+const fn overflow_escapes(e: FixError) -> FixError {
+    if let FixError::OverFlow { op: _ } = e {
+        FixError::Escaped
+    } else {
+        e
+    }
+}
+
 impl Complex {
-    pub fn new(r: Fix2x61, i: Fix2x61) -> Complex {
+    pub const fn new(r: Fix2x61, i: Fix2x61) -> Complex {
         Complex { r, i }
     }
 
-    pub fn i() -> Complex {
+    pub const fn i() -> Complex {
         Complex::new(Fix2x61::zero(), Fix2x61::one())
-    }
-
-    pub fn from_parts(r: i8, i: i8) -> FixResult<Complex> {
-        let r: Fix2x61 = r.try_into()?;
-        let i: Fix2x61 = i.try_into()?;
-        Ok(Complex::new(r, i))
     }
 
     pub fn iterate_mandelbrot(&self, loc: &Complex) -> FixResult<Complex> {
@@ -222,14 +230,6 @@ impl Complex {
 
         // Add
         let (r, i) = ((r + From::from(loc.r))?, (i + From::from(loc.i))?);
-
-        let overflow_escapes = |e| {
-            if let FixError::OverFlow { op: _ } = e {
-                FixError::Escaped
-            } else {
-                e
-            }
-        };
 
         // Truncate
         let (r, i) = (
@@ -273,11 +273,10 @@ mod tests {
     }
 
     #[test]
-    fn mult_fix_point() -> FixResult<()> {
+    fn mult_fix_point() {
         let one = Fix2x61::one();
         let long_one = one * one;
         assert_eq!(long_one, Fix4x123::one());
-        Ok(())
     }
 
     #[test]

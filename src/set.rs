@@ -9,17 +9,18 @@ pub struct Set {
 }
 
 impl Set {
-    pub fn create(size_power_of_two: usize) -> Result<Set, Error> {
-        println!("Starting to allocate");
+    pub fn create(
+        size_power_of_two: usize,
+        centre: Complex,
+        radius: Fix2x61,
+    ) -> Result<Set, Error> {
+        //println!("Starting to allocate");
         assert!(
             size_power_of_two >= 2 && size_power_of_two < (size_of_val(&size_power_of_two) * 8)
         );
         let size = 1 << size_power_of_two;
         let mut points = vec![Point::origin(); size * size];
         assert_eq!(size % 4, 0);
-
-        let centre = Complex::new(Fix2x61::zero(), Fix2x61::zero());
-        let radius = Fix2x61::two();
 
         // d is half the distance between the points we'll sample.
         // Imagine our square area is made up of size ^ 2 smaller squares.  Our aim is to iterate
@@ -52,13 +53,13 @@ impl Set {
     }
 
     pub fn iterate_as_required(self, over: u64) -> Result<Set, Error> {
-        println!("Starting to iterate");
+        //println!("Starting to iterate");
         let mut target = 0;
         let mut maximum_non_escaped: u64 = 0;
         let mut new_points = self.points;
         while maximum_non_escaped + over > target {
             target = maximum_non_escaped + over;
-            println!("Aiming for {} iterations", target);
+            //println!("Aiming for {} iterations", target);
             let points = new_points.into_iter();
             new_points = points
                 .map(|p| {
@@ -73,7 +74,7 @@ impl Set {
                 .max()
                 .unwrap();
         }
-        println!("Saw maximum {} iterations", maximum_non_escaped);
+        //println!("Saw maximum {} iterations", maximum_non_escaped);
         Ok(Set {
             points: new_points,
             size: self.size,
