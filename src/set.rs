@@ -1,11 +1,13 @@
 use std::mem::size_of_val;
 
 use anyhow::{Context, Error};
+use itertools::Itertools;
 use rayon::prelude::*;
 
 use crate::complex::Complex;
 use crate::fix::fix2x61::Fix2x61;
 use crate::point::Point;
+use std::cmp::{max, min};
 
 pub struct Set {
     points: Vec<Point>,
@@ -59,10 +61,11 @@ impl Set {
     pub fn iterate_as_required(self, over: u64) -> Result<Set, Error> {
         //println!("Starting to iterate");
         let mut target = 0;
-        let mut maximum_non_escaped: u64 = 0;
+        let mut seen_escapes_up_to: u64 = 0;
         let mut new_points = self.points;
-        while maximum_non_escaped + over > target {
-            target = maximum_non_escaped + over;
+        while seen_escapes_up_to + over > target {
+            target = max(target + over / 4, seen_escapes_up_to + over / 2)
+                .min(seen_escapes_up_to + over);
             //println!("Aiming for {} iterations", target);
             let points = new_points.into_par_iter();
             new_points = points
@@ -72,13 +75,35 @@ impl Set {
                         .unwrap()
                 })
                 .collect();
-            maximum_non_escaped = new_points
-                .iter()
-                .map(|p| if p.escaped { p.iterations } else { 0 })
-                .max()
-                .unwrap();
+            let a = new_points.iter().flat_map(|p| -> Option<i64> {
+                if p.escaped {
+                    Some(-(p.iterations as i64))
+                } else {
+                    None
+                }
+            });
+            let len = min(self.size / 2, a.clone().count() / 5000);
+
+            seen_escapes_up_to = (-a.k_smallest(len).max().unwrap_or(0)) as u64;
         }
-        //println!("Saw maximum {} iterations", maximum_non_escaped);
+
+        let escaped_iterations = new_points
+            .iter()
+            .map(|p| if p.escaped { p.iterations } else { 0 })
+            .sorted()
+            .collect_vec();
+
+        let maximum_escaped_iterations = escaped_iterations.last().unwrap_or(&0);
+
+        println!(
+            "Saw maximum {} iterations (break at {}, then {:?})",
+            maximum_escaped_iterations,
+            seen_escapes_up_to,
+            escaped_iterations
+                .iter()
+                .filter(|&v| v > &seen_escapes_up_to)
+                .collect_vec()
+        );
         Ok(Set {
             points: new_points,
             size: self.size,
