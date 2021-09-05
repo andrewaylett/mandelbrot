@@ -14,7 +14,12 @@ anyhow = "1.0.43"
 
 [dev-dependencies]
 criterion = "0.3.5"
+iai = "0.1.1"
 
 [[bench]]
 name = "mandelbrot"
+harness = false
+
+[[bench]]
+name = "iteration"
 harness = false
