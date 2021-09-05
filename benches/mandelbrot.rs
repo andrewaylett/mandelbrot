@@ -13,7 +13,7 @@ fn bench_render(c: &mut Criterion) {
         b.iter_with_large_drop(|| -> Result<Set, Error> {
             Set::create(7, black_box(centre), black_box(radius))
                 .context("Creating the set")?
-                .iterate_as_required(20)
+                .iterate_as_required(800, 20, false)
         })
     });
 }

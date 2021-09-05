@@ -25,8 +25,12 @@ struct Args {
     radius: f64,
     #[structopt(default_value = "7", short, long)]
     size: usize,
+    #[structopt(default_value = "500", short, long)]
+    min_iter: u64,
     #[structopt(short, long)]
     file: Option<String>,
+    #[structopt(short, long)]
+    verbose: bool,
 }
 
 fn main() -> Result<(), Error> {
@@ -42,7 +46,7 @@ fn main() -> Result<(), Error> {
 
     let set: Set = Set::create(args.size, centre, radius)
         .context("Creating the set")?
-        .iterate_as_required(over)?;
+        .iterate_as_required(args.min_iter, over, args.verbose)?;
 
     let buffer = set.luma_buffer();
 

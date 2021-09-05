@@ -58,10 +58,15 @@ impl Set {
         }
     }
 
-    pub fn iterate_as_required(self, over: u64) -> Result<Set, Error> {
+    pub fn iterate_as_required(
+        self,
+        min_iter: u64,
+        over: u64,
+        verbose: bool,
+    ) -> Result<Set, Error> {
         //println!("Starting to iterate");
         let mut target = 0;
-        let mut seen_escapes_up_to: u64 = 0;
+        let mut seen_escapes_up_to: u64 = min_iter;
         let mut new_points = self.points;
         while seen_escapes_up_to + over > target {
             target = max(target + over / 4, seen_escapes_up_to + over / 2)
@@ -87,23 +92,25 @@ impl Set {
             seen_escapes_up_to = (-a.k_smallest(len).max().unwrap_or(0)) as u64;
         }
 
-        let escaped_iterations = new_points
-            .iter()
-            .map(|p| if p.escaped { p.iterations } else { 0 })
-            .sorted()
-            .collect_vec();
-
-        let maximum_escaped_iterations = escaped_iterations.last().unwrap_or(&0);
-
-        println!(
-            "Saw maximum {} iterations (break at {}, then {:?})",
-            maximum_escaped_iterations,
-            seen_escapes_up_to,
-            escaped_iterations
+        if verbose {
+            let escaped_iterations = new_points
                 .iter()
-                .filter(|&v| v > &seen_escapes_up_to)
-                .collect_vec()
-        );
+                .map(|p| if p.escaped { p.iterations } else { 0 })
+                .sorted()
+                .collect_vec();
+
+            let maximum_escaped_iterations = escaped_iterations.last().unwrap_or(&0);
+
+            println!(
+                "Saw maximum {} iterations (break at {}, then {:?})",
+                maximum_escaped_iterations,
+                seen_escapes_up_to,
+                escaped_iterations
+                    .iter()
+                    .filter(|&v| v > &seen_escapes_up_to)
+                    .collect_vec()
+            );
+        }
         Ok(Set {
             points: new_points,
             size: self.size,
