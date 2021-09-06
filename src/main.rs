@@ -44,7 +44,7 @@ fn main() -> Result<(), Error> {
         }
     }
 
-    let buffer = set.luma_buffer();
+    let buffer = set.chroma_buffer();
 
     let filename = if let Some(name) = args.file {
         name
@@ -64,7 +64,7 @@ fn main() -> Result<(), Error> {
         &buffer[..],
         set.size(),
         set.size(),
-        image::Gray(8),
+        image::ColorType::RGB(8),
     )
     .unwrap();
     Ok(())

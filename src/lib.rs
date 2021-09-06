@@ -1,6 +1,7 @@
 extern crate image;
 extern crate num;
 
+pub mod colours;
 pub mod complex;
 pub mod extending;
 pub mod fix;

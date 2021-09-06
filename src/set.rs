@@ -210,6 +210,22 @@ impl Set {
             .collect()
     }
 
+    pub fn chroma_buffer(&self) -> Vec<u8> {
+        let vga = &crate::colours::VGA_MAP;
+
+        self.points
+            .iter()
+            .flat_map(|p| {
+                if p.escaped {
+                    let c = &vga[(p.iterations % 16) as usize];
+                    vec![c.0, c.1, c.2]
+                } else {
+                    vec![0, 0, 0]
+                }
+            })
+            .collect()
+    }
+
     pub fn size(&self) -> u32 {
         1 << self.power_size as u32
     }
