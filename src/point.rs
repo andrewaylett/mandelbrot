@@ -9,6 +9,7 @@ pub struct Point {
     value: Complex,
     pub iterations: u64,
     pub escaped: bool,
+    pub escape_candidate: bool,
 }
 
 impl Point {
@@ -19,12 +20,14 @@ impl Point {
     }
 
     pub const fn new(c: Complex) -> Point {
-        let escaped = false; //c.escaped();
+        let escaped = false;
+        let escape_candidate = false;
         Point {
             loc: c,
             value: c,
             iterations: 0,
             escaped,
+            escape_candidate,
         }
     }
 
@@ -60,6 +63,10 @@ impl Point {
     }
 
     pub fn iterate_to_n(self, n: u64) -> Result<Point, Error> {
+        if !self.escape_candidate {
+            return Ok(self);
+        }
+
         let mut v = self;
         for i in v.iterations..n {
             if v.escaped {

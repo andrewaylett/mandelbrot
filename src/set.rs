@@ -39,7 +39,11 @@ impl Set {
             let mut r: Result<Fix2x61, Error> = Ok(r_start);
             for each_r in 0..size - 1 {
                 let r_ = r.context(each_r)?;
-                points[each_r + size * each_i] = Point::from_parts(&r_, &i_);
+                let mut point = Point::from_parts(&r_, &i_);
+                if each_i == 0 || each_i == size - 1 || each_r == 0 || each_r == size - 1 {
+                    point.escape_candidate = true;
+                }
+                points[each_r + size * each_i] = point;
                 r = (r_ + d).with_context(|| format!("r + d: {:?} + {:?}", r_, d))
             }
             i = (i_ + d).with_context(|| format!("i + d: {:?} + {:?}", i_, d));
@@ -68,7 +72,9 @@ impl Set {
         let mut target = 0;
         let mut seen_escapes_up_to: u64 = min_iter;
         let mut new_points = self.points;
-        while seen_escapes_up_to + over > target {
+        let mut new_candidates = true;
+        while seen_escapes_up_to + over > target || new_candidates {
+            new_candidates = false;
             target = max(target + over / 4, seen_escapes_up_to + over / 2)
                 .min(seen_escapes_up_to + over);
             //println!("Aiming for {} iterations", target);
@@ -80,6 +86,27 @@ impl Set {
                         .unwrap()
                 })
                 .collect();
+            let size = self.size as i64;
+            for i in 0..size * size {
+                let update_if_in_range = |new_points: &mut Vec<Point>, r: i64| {
+                    if r >= 0 && r < size * size {
+                        let old_val = new_points[r as usize].escape_candidate;
+                        new_points[r as usize].escape_candidate = true;
+                        !old_val
+                    } else {
+                        false
+                    }
+                };
+
+                if new_points[i as usize].escaped {
+                    new_candidates |= update_if_in_range(&mut new_points, i + 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i - 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i + size + 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i + size - 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i - size + 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i - size - 1);
+                }
+            }
             let a = new_points.iter().flat_map(|p| -> Option<i64> {
                 if p.escaped {
                     Some(-(p.iterations as i64))
@@ -101,9 +128,21 @@ impl Set {
 
             let maximum_escaped_iterations = escaped_iterations.last().unwrap_or(&0);
 
+            let (candidates, not_candidates) = new_points.iter().map(|p| p.escape_candidate).fold(
+                (0, 0),
+                |(candidates, not_candidates), b: bool| {
+                    (
+                        candidates + if b { 1 } else { 0 },
+                        not_candidates + if b { 0 } else { 1 },
+                    )
+                },
+            );
+
             println!(
-                "Saw maximum {} iterations (break at {}, then {:?})",
+                "Saw maximum {} iterations ({} candidates, {} not candidates) (break at {}, then {:?})",
                 maximum_escaped_iterations,
+                candidates,
+                not_candidates,
                 seen_escapes_up_to,
                 escaped_iterations
                     .iter()
