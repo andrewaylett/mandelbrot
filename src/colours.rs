@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 pub struct RGB(pub u8, pub u8, pub u8);
 
 lazy_static! {
+    // Ref https://svn.fractint.net/trunk/fractint/maps/default.map
     pub static ref VGA_MAP: Vec<RGB> = vec!(
         RGB(0, 0, 0),
         RGB(0, 0, 168),
