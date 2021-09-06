@@ -7,31 +7,92 @@ use rayon::prelude::*;
 use crate::complex::Complex;
 use crate::fix::fix2x61::Fix2x61;
 use crate::point::Point;
-use std::cmp::{max, min};
+use crate::zoom_path::Quad;
+use std::cmp::min;
 
 pub struct Set {
     points: Vec<Point>,
-    size: usize,
+    power_size: usize,
+    centre: Complex,
+    radius: Fix2x61,
 }
 
 impl Set {
-    pub fn create(
-        size_power_of_two: usize,
+    pub fn subset(&self, quad: &Quad) -> Result<Set, Error> {
+        let power_size = self.power_size;
+        let radius = self.radius.halve()?;
+        let centre = match quad {
+            Quad::TopLeft => Complex::new((self.centre.r - radius)?, (self.centre.i - radius)?),
+            Quad::TopRight => Complex::new((self.centre.r + radius)?, (self.centre.i - radius)?),
+            Quad::BottomLeft => Complex::new((self.centre.r - radius)?, (self.centre.i + radius)?),
+            Quad::BottomRight => Complex::new((self.centre.r + radius)?, (self.centre.i + radius)?),
+        };
+        let mut points = Set::generate_points(power_size, centre, radius)?;
+
+        let size = 1usize << power_size;
+        let half_size = 1usize << (power_size - 1);
+        let start = match quad {
+            Quad::TopLeft => 0,
+            Quad::TopRight => half_size,
+            Quad::BottomLeft => size * half_size,
+            Quad::BottomRight => size * half_size + half_size,
+        };
+        for x in 0..half_size {
+            for y in 0..half_size {
+                let old_points_i = start + x + size * y;
+                if self.points[old_points_i].escaped {
+                    let base = (x * 2 + size * y * 2) as i64;
+                    update_if_in_range(&mut points, base, size as i64);
+                    update_if_in_range(&mut points, base + 1, size as i64);
+                    update_if_in_range(&mut points, base + size as i64, size as i64);
+                    update_if_in_range(&mut points, base + size as i64 + 1, size as i64);
+                }
+            }
+        }
+
+        Ok(Set {
+            points,
+            power_size,
+            centre,
+            radius,
+        })
+    }
+}
+
+impl Set {
+    pub fn create(power_size: usize, centre: Complex, radius: Fix2x61) -> Result<Set, Error> {
+        //println!("Starting to allocate");
+        let mut points = Set::generate_points(power_size, centre, radius)?;
+
+        let size = 1 << power_size;
+        for (i, p) in points.iter_mut().enumerate() {
+            if i % size == 0 || i % size == size - 1 || i / size == 0 || i / size == size - 1 {
+                p.escape_candidate = true;
+            }
+        }
+
+        Ok(Set {
+            points,
+            power_size,
+            centre,
+            radius,
+        })
+    }
+
+    fn generate_points(
+        power_size: usize,
         centre: Complex,
         radius: Fix2x61,
-    ) -> Result<Set, Error> {
-        //println!("Starting to allocate");
-        assert!(
-            size_power_of_two >= 2 && size_power_of_two < (size_of_val(&size_power_of_two) * 8)
-        );
-        let size = 1 << size_power_of_two;
+    ) -> Result<Vec<Point>, Error> {
+        assert!(power_size >= 2 && power_size < (size_of_val(&power_size) * 8));
+        let size = 1 << power_size;
         let mut points = vec![Point::ORIGIN; size * size];
-        assert_eq!(size % 4, 0);
 
         // d is half the distance between the points we'll sample.
         // Imagine our square area is made up of size ^ 2 smaller squares.  Our aim is to iterate
         // the middle of each of these smaller squares.
-        let d = (radius * Fix2x61::power_of_two(1 - (size_power_of_two as i8))?).truncate()?;
+        let d = (radius * Fix2x61::power_of_two(-(power_size as i8))?).truncate()?;
+        let d2 = (Fix2x61::two() * d).truncate()?;
         let r_start = ((centre.r - radius)? + d)?;
         let mut i: Result<Fix2x61, Error> = ((centre.i - radius)? + d).map_err(Into::into);
         for each_i in 0..size - 1 {
@@ -39,44 +100,42 @@ impl Set {
             let mut r: Result<Fix2x61, Error> = Ok(r_start);
             for each_r in 0..size - 1 {
                 let r_ = r.context(each_r)?;
-                let mut point = Point::from_parts(&r_, &i_);
-                if each_i == 0 || each_i == size - 1 || each_r == 0 || each_r == size - 1 {
-                    point.escape_candidate = true;
-                }
+                let point = Point::from_parts(&r_, &i_);
                 points[each_r + size * each_i] = point;
-                r = (r_ + d).with_context(|| format!("r + d: {:?} + {:?}", r_, d))
+                r = (r_ + d2).with_context(|| format!("r + d: {:?} + {:?}", r_, d2))
             }
-            i = (i_ + d).with_context(|| format!("i + d: {:?} + {:?}", i_, d));
+            i = (i_ + d2).with_context(|| format!("i + d: {:?} + {:?}", i_, d2));
         }
-        Ok(Set { points, size })
+        Ok(points)
     }
-}
 
-impl Set {
+    pub fn seen_escapes_to(&self) -> u64 {
+        self.points
+            .iter()
+            .max_by_key(|&p| if p.escaped { p.iterations } else { 0 })
+            .map(|p| p.iterations)
+            .unwrap_or_default()
+    }
+
     pub fn iterate_to(self, n: u64) -> Set {
         let points = self.points.into_iter();
         let new_points = points.map(|p| p.iterate_to_n(n).unwrap());
         Set {
             points: new_points.collect(),
-            size: self.size,
+            power_size: self.power_size,
+            centre: self.centre,
+            radius: self.radius,
         }
     }
 
-    pub fn iterate_as_required(
-        self,
-        min_iter: u64,
-        over: u64,
-        verbose: bool,
-    ) -> Result<Set, Error> {
+    pub fn iterate_as_required(self, min_iter: u64, verbose: bool) -> Result<Set, Error> {
         //println!("Starting to iterate");
-        let mut target = 0;
         let mut seen_escapes_up_to: u64 = min_iter;
         let mut new_points = self.points;
         let mut new_candidates = true;
-        while seen_escapes_up_to + over > target || new_candidates {
+        while new_candidates {
             new_candidates = false;
-            target = max(target + over / 4, seen_escapes_up_to + over / 2)
-                .min(seen_escapes_up_to + over);
+            let target = min(min_iter * 2, seen_escapes_up_to * 2);
             //println!("Aiming for {} iterations", target);
             let points = new_points.into_par_iter();
             new_points = points
@@ -86,37 +145,24 @@ impl Set {
                         .unwrap()
                 })
                 .collect();
-            let size = self.size as i64;
+            let size = 1 << self.power_size as i64;
             for i in 0..size * size {
-                let update_if_in_range = |new_points: &mut Vec<Point>, r: i64| {
-                    if r >= 0 && r < size * size {
-                        let old_val = new_points[r as usize].escape_candidate;
-                        new_points[r as usize].escape_candidate = true;
-                        !old_val
-                    } else {
-                        false
-                    }
-                };
-
                 if new_points[i as usize].escaped {
-                    new_candidates |= update_if_in_range(&mut new_points, i + 1);
-                    new_candidates |= update_if_in_range(&mut new_points, i - 1);
-                    new_candidates |= update_if_in_range(&mut new_points, i + size + 1);
-                    new_candidates |= update_if_in_range(&mut new_points, i + size - 1);
-                    new_candidates |= update_if_in_range(&mut new_points, i - size + 1);
-                    new_candidates |= update_if_in_range(&mut new_points, i - size - 1);
+                    new_candidates |= update_if_in_range(&mut new_points, i + 1, size);
+                    new_candidates |= update_if_in_range(&mut new_points, i - 1, size);
+                    new_candidates |= update_if_in_range(&mut new_points, i + size + 1, size);
+                    new_candidates |= update_if_in_range(&mut new_points, i + size - 1, size);
+                    new_candidates |= update_if_in_range(&mut new_points, i - size + 1, size);
+                    new_candidates |= update_if_in_range(&mut new_points, i - size - 1, size);
                 }
             }
-            let a = new_points.iter().flat_map(|p| -> Option<i64> {
-                if p.escaped {
-                    Some(-(p.iterations as i64))
-                } else {
-                    None
-                }
-            });
-            let len = min(self.size / 2, a.clone().count() / 5000);
-
-            seen_escapes_up_to = (-a.k_smallest(len).max().unwrap_or(0)) as u64;
+            if let Some(m) =
+                new_points
+                    .iter()
+                    .max_by_key(|&p| if p.escaped { Some(p.iterations) } else { None })
+            {
+                seen_escapes_up_to = m.iterations;
+            }
         }
 
         if verbose {
@@ -139,20 +185,15 @@ impl Set {
             );
 
             println!(
-                "Saw maximum {} iterations ({} candidates, {} not candidates) (break at {}, then {:?})",
-                maximum_escaped_iterations,
-                candidates,
-                not_candidates,
-                seen_escapes_up_to,
-                escaped_iterations
-                    .iter()
-                    .filter(|&v| v > &seen_escapes_up_to)
-                    .collect_vec()
+                "Saw maximum {} iterations ({} candidates, {} not candidates) (break at {})",
+                maximum_escaped_iterations, candidates, not_candidates, seen_escapes_up_to,
             );
         }
         Ok(Set {
             points: new_points,
-            size: self.size,
+            power_size: self.power_size,
+            centre: self.centre,
+            radius: self.radius,
         })
     }
 
@@ -170,6 +211,16 @@ impl Set {
     }
 
     pub fn size(&self) -> u32 {
-        self.size as u32
+        1 << self.power_size as u32
+    }
+}
+
+fn update_if_in_range(new_points: &mut Vec<Point>, r: i64, size: i64) -> bool {
+    if r >= 0 && r < size * size {
+        let old_val = new_points[r as usize].escape_candidate;
+        new_points[r as usize].escape_candidate = true;
+        !old_val
+    } else {
+        false
     }
 }

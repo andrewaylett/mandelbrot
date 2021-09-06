@@ -11,9 +11,22 @@ use crate::fix::fix4x123::Fix4x123;
 pub struct Fix2x61(pub(crate) i64);
 
 impl Fix2x61 {
+    pub(crate) fn halve(&self) -> FixResult<Fix2x61> {
+        let val = self.0 >> 1;
+        if val == 0 {
+            Err(FixError::Underflow {
+                op: "Fix2x61::halve",
+            })
+        } else {
+            Ok(Fix2x61(val))
+        }
+    }
+}
+
+impl Fix2x61 {
     const fn try_from_i8(value: i8) -> Result<Fix2x61, FixError> {
         if value >= 4 || value <= -4 {
-            Err(FixError::OverFlow {
+            Err(FixError::Overflow {
                 op: "Fix2x61::try_from(i8)",
             })
         } else {
@@ -60,7 +73,7 @@ impl Fix2x61 {
 
     pub const fn power_of_two(pow: i8) -> FixResult<Self> {
         if pow > 2 || pow < -61 {
-            Err(FixError::OverFlow { op: "power_of_two" })
+            Err(FixError::Overflow { op: "power_of_two" })
         } else {
             Ok(Fix2x61(1 << (61 + pow)))
         }
@@ -74,7 +87,7 @@ impl Add for Fix2x61 {
         if let Some(res) = self.0.checked_add(rhs.0) {
             Ok(Self(res))
         } else {
-            Err(FixError::OverFlow { op: "Fix2x61::add" })
+            Err(FixError::Overflow { op: "Fix2x61::add" })
         }
     }
 }
@@ -86,7 +99,7 @@ impl Sub for Fix2x61 {
         if let Some(res) = self.0.checked_sub(rhs.0) {
             Ok(Self(res))
         } else {
-            Err(FixError::OverFlow { op: "Fix2x61::sub" })
+            Err(FixError::Overflow { op: "Fix2x61::sub" })
         }
     }
 }
@@ -112,7 +125,7 @@ impl TryFrom<f64> for Fix2x61 {
 
     fn try_from(value: f64) -> Result<Self, Self::Error> {
         if abs(value) >= 4.0 {
-            Err(FixError::OverFlow {
+            Err(FixError::Overflow {
                 op: "Fix2x61::try_from(f64)",
             })
         } else {

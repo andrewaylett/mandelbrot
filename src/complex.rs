@@ -11,7 +11,9 @@ use crate::fix::fix4x123::Fix4x123;
 #[derive(Clone, Debug, Error)]
 pub enum FixError {
     #[error("Operation {op} would overflow")]
-    OverFlow { op: &'static str },
+    Overflow { op: &'static str },
+    #[error("Operation {op} would underflow")]
+    Underflow { op: &'static str },
     #[error("Iteration triggered escape")]
     Escaped,
 }
@@ -22,6 +24,15 @@ pub type FixResult<T> = Result<T, FixError>;
 pub struct Complex {
     pub r: Fix2x61,
     pub i: Fix2x61,
+}
+
+impl Complex {
+    pub const fn zero() -> Complex {
+        Complex {
+            r: Fix2x61::zero(),
+            i: Fix2x61::zero(),
+        }
+    }
 }
 
 impl FromStr for Complex {
@@ -41,7 +52,7 @@ impl FromStr for Complex {
 }
 
 const fn overflow_escapes(e: FixError) -> FixError {
-    if let FixError::OverFlow { op: _ } = e {
+    if let FixError::Overflow { op: _ } = e {
         FixError::Escaped
     } else {
         e

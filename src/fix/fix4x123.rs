@@ -27,7 +27,7 @@ impl Fix4x123 {
         if self.0 < Fix4x123::four().0 && self.0 > -(Fix4x123::four().0) {
             Ok(Fix2x61((self.0 >> 62) as i64))
         } else {
-            Err(FixError::OverFlow { op: "truncate" })
+            Err(FixError::Overflow { op: "truncate" })
         }
     }
 }
@@ -45,7 +45,7 @@ impl Add for Fix4x123 {
         if let Some(res) = self.0.checked_add(rhs.0) {
             Ok(Self(res))
         } else {
-            Err(FixError::OverFlow {
+            Err(FixError::Overflow {
                 op: "Fix4x123::add",
             })
         }
@@ -59,7 +59,7 @@ impl Sub for Fix4x123 {
         if let Some(res) = self.0.checked_sub(rhs.0) {
             Ok(Self(res))
         } else {
-            Err(FixError::OverFlow {
+            Err(FixError::Overflow {
                 op: "Fix4x123::sub",
             })
         }

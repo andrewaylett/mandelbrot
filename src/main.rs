@@ -4,7 +4,7 @@ extern crate time;
 extern crate mandelbrot;
 extern crate num;
 
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::path::Path;
 
 use anyhow::{Context, Error};
@@ -13,20 +13,13 @@ use structopt::StructOpt;
 use mandelbrot::complex::Complex;
 use mandelbrot::fix::fix2x61::Fix2x61;
 use mandelbrot::set::Set;
+use mandelbrot::zoom_path::ZoomPath;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "mandelbrot")]
 struct Args {
-    #[structopt(default_value = "20", short, long)]
-    over: u64,
-    #[structopt(default_value = "0,0", short, long)]
-    centre: Complex,
-    #[structopt(default_value = "2", short, long)]
-    radius: f64,
-    #[structopt(default_value = "7", short, long)]
-    size: usize,
-    #[structopt(default_value = "500", short, long)]
-    min_iter: u64,
+    #[structopt(long)]
+    path: Option<ZoomPath>,
     #[structopt(short, long)]
     file: Option<String>,
     #[structopt(short, long)]
@@ -35,18 +28,21 @@ struct Args {
 
 fn main() -> Result<(), Error> {
     let args = Args::from_args();
-    let over = args.over;
-    println!(
-        "Going to go for {} past the maximum seen escape point",
-        over
-    );
 
-    let centre = args.centre;
-    let radius: Fix2x61 = args.radius.try_into()?;
+    let centre = Complex::zero();
+    let radius: Fix2x61 = Fix2x61::try_from(2i8)?;
 
-    let set: Set = Set::create(args.size, centre, radius)
+    let mut set: Set = Set::create(8, centre, radius)
         .context("Creating the set")?
-        .iterate_as_required(args.min_iter, over, args.verbose)?;
+        .iterate_as_required(500, args.verbose)?;
+
+    if let Some(path) = args.path {
+        for quad in path.0.iter() {
+            set = set
+                .subset(quad)?
+                .iterate_as_required(set.seen_escapes_to(), args.verbose)?;
+        }
+    }
 
     let buffer = set.luma_buffer();
 
