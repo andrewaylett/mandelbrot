@@ -15,36 +15,43 @@ impl From<&Rgb> for Vec<u8> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum ColourScheme {
-    Greyscale,
-    Fractint,
-    LogGreyscale,
+macro_rules! enum_deref_trait {
+    {
+        pub enum $Ty:ident: $Trait:ident {
+            $($El:ident,)+
+        }
+    } => {
+        #[derive(Debug,Copy,Clone)]
+        pub enum $Ty {
+            $($El),+
+        }
+        $(
+        struct $El;
+        )+
+        impl Deref for $Ty {
+            type Target = dyn $Trait;
+
+            fn deref(&self) -> &Self::Target {
+                match self {
+                    $($Ty::$El => &$El {}),+
+                }
+            }
+        }
+    }
 }
 
-struct Greyscale;
-static GREYSCALE: Greyscale = Greyscale {};
-struct Fractint;
-static FRACTINT: Fractint = Fractint {};
-struct LogGreyscale;
-static LOGGREYSCALE: LogGreyscale = LogGreyscale {};
+enum_deref_trait! {
+    pub enum ColourScheme : ColourSchemeT {
+        Greyscale,
+        Fractint,
+        LogGreyscale,
+    }
+}
 
 pub trait ColourSchemeT {
     fn colour_type(&self) -> image::ColorType;
     fn bytes(&self, iterations: u64) -> Vec<u8>;
     fn escaped_bytes(&self) -> Vec<u8>;
-}
-
-impl Deref for ColourScheme {
-    type Target = dyn ColourSchemeT;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            ColourScheme::Greyscale => &GREYSCALE,
-            ColourScheme::Fractint => &FRACTINT,
-            ColourScheme::LogGreyscale => &LOGGREYSCALE,
-        }
-    }
 }
 
 impl ColourSchemeT for Greyscale {
