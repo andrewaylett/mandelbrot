@@ -11,7 +11,7 @@ use crate::zoom_path::Quad;
 use std::cmp::min;
 
 pub struct Set {
-    points: Vec<Point>,
+    pub(crate) points: Vec<Point>,
     power_size: usize,
     centre: Complex,
     radius: Fix2x61,
@@ -195,35 +195,6 @@ impl Set {
             centre: self.centre,
             radius: self.radius,
         })
-    }
-
-    pub fn luma_buffer(&self) -> Vec<u8> {
-        self.points
-            .iter()
-            .map(|p| {
-                if p.escaped {
-                    ((p.iterations % 255) + 1) as u8
-                } else {
-                    0
-                }
-            })
-            .collect()
-    }
-
-    pub fn chroma_buffer(&self) -> Vec<u8> {
-        let vga = &crate::colours::VGA_MAP;
-
-        self.points
-            .iter()
-            .flat_map(|p| {
-                if p.escaped {
-                    let c = &vga[(p.iterations % 16) as usize];
-                    vec![c.0, c.1, c.2]
-                } else {
-                    vec![0, 0, 0]
-                }
-            })
-            .collect()
     }
 
     pub fn size(&self) -> u32 {

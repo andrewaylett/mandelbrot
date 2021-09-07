@@ -5,11 +5,11 @@ extern crate mandelbrot;
 extern crate num;
 
 use std::convert::TryFrom;
-use std::path::Path;
 
 use anyhow::{Context, Error};
 use structopt::StructOpt;
 
+use mandelbrot::colours::ColourScheme;
 use mandelbrot::complex::Complex;
 use mandelbrot::fix::fix2x61::Fix2x61;
 use mandelbrot::set::Set;
@@ -24,6 +24,8 @@ struct Args {
     file: Option<String>,
     #[structopt(short, long)]
     verbose: bool,
+    #[structopt(default_value = "fractint", short, long)]
+    scheme: ColourScheme,
 }
 
 fn main() -> Result<(), Error> {
@@ -44,8 +46,6 @@ fn main() -> Result<(), Error> {
         }
     }
 
-    let buffer = set.chroma_buffer();
-
     let filename = if let Some(name) = args.file {
         name
     } else {
@@ -59,13 +59,7 @@ fn main() -> Result<(), Error> {
         format!("{}.png", filename)
     };
 
-    image::save_buffer(
-        &Path::new(&filename),
-        &buffer[..],
-        set.size(),
-        set.size(),
-        image::ColorType::RGB(8),
-    )
-    .unwrap();
+    set.render_to_file(&args.scheme, &filename)?;
+
     Ok(())
 }
