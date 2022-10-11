@@ -34,15 +34,13 @@ fn main() -> Result<(), Error> {
     let centre = Complex::zero();
     let radius: Fix2x61 = Fix2x61::try_from(2i8)?;
 
-    let mut set: Set = Set::create(8, centre, radius)
-        .context("Creating the set")?
-        .iterate_as_required(500, args.verbose)?;
+    let mut set: Set = Set::create(8, centre, radius).context("Creating the set")?;
+    set.iterate_as_required(500, args.verbose)?;
 
     if let Some(path) = args.path {
         for quad in path.0.iter() {
-            set = set
-                .subset(quad)?
-                .iterate_as_required(set.seen_escapes_to(), args.verbose)?;
+            set = set.subset(quad)?;
+            set.iterate_as_required(set.seen_escapes_to(), args.verbose)?;
         }
     }
 

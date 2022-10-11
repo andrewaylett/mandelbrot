@@ -20,7 +20,7 @@ pub enum FixError {
 
 pub type FixResult<T> = Result<T, FixError>;
 
-#[derive(Copy, Debug, Clone, PartialEq)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub struct Complex {
     pub r: Fix2x61,
     pub i: Fix2x61,
@@ -65,7 +65,7 @@ impl Complex {
     }
 
     #[inline(always)] // Microbenchmarks suggest inlining slows down single iterations but speeds up full renders
-    pub fn iterate_mandelbrot(&self, loc: &Complex) -> FixResult<Complex> {
+    pub fn iterate_mandelbrot(&mut self, loc: &Complex) -> FixResult<()> {
         let r = self.r;
         let i = self.i;
 
@@ -85,7 +85,9 @@ impl Complex {
         if abs((r * r + i * i).map_err(overflow_escapes)?.0) >= Fix4x123::four().0 {
             Err(FixError::Escaped)
         } else {
-            Ok(Complex::new(r, i))
+            self.r = r;
+            self.i = i;
+            Ok(())
         }
     }
 }
@@ -179,17 +181,19 @@ mod tests {
 
     #[test]
     fn iterate_zero() -> FixResult<()> {
-        let origin: Complex = Default::default();
-        let iterated = origin.iterate_mandelbrot(&origin)?;
-        assert_eq!(iterated, origin);
+        let mut origin: Complex = Default::default();
+        let location: Complex = Default::default();
+        origin.iterate_mandelbrot(&location)?;
+        assert_eq!(location, origin);
         Ok(())
     }
 
     #[test]
     fn iterate_i() -> FixResult<()> {
-        let i = Complex::new(Fix2x61::zero(), Fix2x61::one());
-        let iterated = i.iterate_mandelbrot(&i)?;
-        assert_eq!(iterated, Complex::new(Fix2x61(-1 << 61), Fix2x61::one()));
+        let mut i = Complex::new(Fix2x61::zero(), Fix2x61::one());
+        let j = i;
+        i.iterate_mandelbrot(&j)?;
+        assert_eq!(i, Complex::new(Fix2x61(-1 << 61), Fix2x61::one()));
         Ok(())
     }
 

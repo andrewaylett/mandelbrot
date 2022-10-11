@@ -117,47 +117,38 @@ impl Set {
             .unwrap_or_default()
     }
 
-    pub fn iterate_to(self, n: u64) -> Set {
-        let points = self.points.into_iter();
-        let new_points = points.map(|p| p.iterate_to_n(n).unwrap());
-        Set {
-            points: new_points.collect(),
-            power_size: self.power_size,
-            centre: self.centre,
-            radius: self.radius,
-        }
+    pub fn iterate_to(&mut self, n: u64) {
+        self.points
+            .iter_mut()
+            .for_each(|p| p.iterate_to_n(n).unwrap());
     }
 
-    pub fn iterate_as_required(self, min_iter: u64, verbose: bool) -> Result<Set, Error> {
+    pub fn iterate_as_required(&mut self, min_iter: u64, verbose: bool) -> Result<(), Error> {
         //println!("Starting to iterate");
         let mut seen_escapes_up_to: u64 = min_iter;
-        let mut new_points = self.points;
         let mut new_candidates = true;
         while new_candidates {
             new_candidates = false;
             let target = min(min_iter * 2, seen_escapes_up_to * 2);
             //println!("Aiming for {} iterations", target);
-            let points = new_points.into_par_iter();
-            new_points = points
-                .map(|p: Point| {
-                    p.iterate_to_n(target)
-                        .with_context(|| format!("Iterating point {:?}", p.value()))
-                        .unwrap()
-                })
-                .collect();
+            self.points.par_iter_mut().for_each(|p| {
+                p.iterate_to_n(target)
+                    .with_context(|| format!("Iterating point {:?}", p.value()))
+                    .unwrap()
+            });
             let size = 1 << self.power_size as i64;
             for i in 0..size * size {
-                if new_points[i as usize].escaped {
-                    new_candidates |= update_if_in_range(&mut new_points, i + 1, size);
-                    new_candidates |= update_if_in_range(&mut new_points, i - 1, size);
-                    new_candidates |= update_if_in_range(&mut new_points, i + size + 1, size);
-                    new_candidates |= update_if_in_range(&mut new_points, i + size - 1, size);
-                    new_candidates |= update_if_in_range(&mut new_points, i - size + 1, size);
-                    new_candidates |= update_if_in_range(&mut new_points, i - size - 1, size);
+                if self.points[i as usize].escaped {
+                    new_candidates |= update_if_in_range(&mut self.points, i + 1, size);
+                    new_candidates |= update_if_in_range(&mut self.points, i - 1, size);
+                    new_candidates |= update_if_in_range(&mut self.points, i + size + 1, size);
+                    new_candidates |= update_if_in_range(&mut self.points, i + size - 1, size);
+                    new_candidates |= update_if_in_range(&mut self.points, i - size + 1, size);
+                    new_candidates |= update_if_in_range(&mut self.points, i - size - 1, size);
                 }
             }
             if let Some(m) =
-                new_points
+                self.points
                     .iter()
                     .max_by_key(|&p| if p.escaped { Some(p.iterations) } else { None })
             {
@@ -166,7 +157,8 @@ impl Set {
         }
 
         if verbose {
-            let escaped_iterations = new_points
+            let escaped_iterations = self
+                .points
                 .iter()
                 .map(|p| if p.escaped { p.iterations } else { 0 })
                 .sorted()
@@ -174,7 +166,7 @@ impl Set {
 
             let maximum_escaped_iterations = escaped_iterations.last().unwrap_or(&0);
 
-            let (candidates, not_candidates) = new_points.iter().map(|p| p.escape_candidate).fold(
+            let (candidates, not_candidates) = self.points.iter().map(|p| p.escape_candidate).fold(
                 (0, 0),
                 |(candidates, not_candidates), b: bool| {
                     (
@@ -189,12 +181,7 @@ impl Set {
                 maximum_escaped_iterations, candidates, not_candidates, seen_escapes_up_to,
             );
         }
-        Ok(Set {
-            points: new_points,
-            power_size: self.power_size,
-            centre: self.centre,
-            radius: self.radius,
-        })
+        Ok(())
     }
 
     pub fn size(&self) -> u32 {
@@ -202,7 +189,7 @@ impl Set {
     }
 }
 
-fn update_if_in_range(new_points: &mut Vec<Point>, r: i64, size: i64) -> bool {
+fn update_if_in_range(new_points: &mut [Point], r: i64, size: i64) -> bool {
     if r >= 0 && r < size * size {
         let old_val = new_points[r as usize].escape_candidate;
         new_points[r as usize].escape_candidate = true;

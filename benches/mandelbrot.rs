@@ -11,20 +11,21 @@ fn bench_render(c: &mut Criterion) {
 
     c.bench_function("128x128 over 20", |b| {
         b.iter_with_large_drop(|| -> Result<Set, Error> {
-            Set::create(7, black_box(centre), black_box(radius))
-                .context("Creating the set")?
-                .iterate_as_required(400, false)
+            let mut set =
+                Set::create(7, black_box(centre), black_box(radius)).context("Creating the set")?;
+            set.iterate_as_required(400, false)?;
+            Ok(set)
         })
     });
 }
 
 fn bench_iterate(c: &mut Criterion) {
     let zero = Complex::new(Fix2x61::zero(), Fix2x61::zero());
-    let z1 = black_box(zero);
+    let mut z1 = black_box(zero);
     let z2 = black_box(zero);
 
     c.bench_function("iterate zero", |b| {
-        b.iter(|| -> FixResult<Complex> { z1.iterate_mandelbrot(&z2) })
+        b.iter(|| -> FixResult<Complex> { z1.iterate_mandelbrot(&z2).map(|_| z1) })
     });
 }
 

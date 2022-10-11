@@ -7,7 +7,7 @@ use num::abs;
 use crate::complex::{FixError, FixResult};
 use crate::fix::fix4x123::Fix4x123;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Fix2x61(pub(crate) i64);
 
 impl Fix2x61 {

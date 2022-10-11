@@ -38,48 +38,46 @@ impl Point {
             if let Err(FixError::Escaped) = iterated {
                 self.escaped = true;
             } else {
-                self.value = iterated
-                    .with_context(|| format!("Iterating, value before: {:?}", self.value))?
+                iterated.with_context(|| format!("Iterating, value after: {:?}", self.value))?
             }
             self.iterations += 1;
         }
         Ok(())
     }
 
-    pub fn iterate_n(self, n: u64) -> Result<Point, Error> {
-        let mut v = self;
+    pub fn iterate_n(&mut self, n: u64) -> Result<(), Error> {
         for i in 0..n {
-            if v.escaped {
-                return Ok(v);
+            if self.escaped {
+                return Ok(());
             }
-            v.iterate().with_context(|| {
+            self.iterate().with_context(|| {
                 format!(
                     "Iterate n {} of {}, iteration {}, value {:?}",
-                    i, n, v.iterations, v.value
+                    i, n, self.iterations, self.value
                 )
             })?;
         }
-        Ok(v)
+        Ok(())
     }
 
-    pub fn iterate_to_n(self, n: u64) -> Result<Point, Error> {
+    pub fn iterate_to_n(&mut self, n: u64) -> Result<(), Error> {
         if !self.escape_candidate {
-            return Ok(self);
+            return Ok(());
         }
 
-        let mut v = self;
-        for i in v.iterations..n {
-            if v.escaped {
-                return Ok(v);
+        let start = self.iterations;
+        for i in start..n {
+            if self.escaped {
+                return Ok(());
             }
-            v.iterate().with_context(|| {
+            self.iterate().with_context(|| {
                 format!(
                     "Iterate to n {} of {}, iteration {}, value {:?}",
-                    i, n, v.iterations, v.value
+                    i, n, self.iterations, self.value
                 )
             })?;
         }
-        Ok(v)
+        Ok(())
     }
 
     pub fn value(&self) -> &Complex {
@@ -111,35 +109,36 @@ mod test {
 
     #[test]
     fn zero_never_escapes() -> Result<(), Error> {
-        let zero: Point = Point::ORIGIN;
+        let mut zero: Point = Point::ORIGIN;
         let target_count = 1_000_000;
-        let r = zero.iterate_n(target_count)?;
+        zero.iterate_n(target_count)?;
 
-        assert_eq!(r.escaped, false);
-        assert_eq!(r.iterations, target_count);
+        assert!(!zero.escaped);
+        assert_eq!(zero.iterations, target_count);
         Ok(())
     }
 
     #[test]
     fn iterate_to_works() -> Result<(), Error> {
-        let zero: Point = Point::ORIGIN;
-        let ten = zero.iterate_n(10)?;
+        let mut zero: Point = Point::ORIGIN;
+        zero.escape_candidate = true;
+        zero.iterate_n(10)?;
         let target_count = 1_000_000;
-        let r = ten.iterate_to_n(target_count)?;
+        zero.iterate_to_n(target_count)?;
 
-        assert_eq!(r.escaped, false);
-        assert_eq!(r.iterations, target_count);
+        assert!(!zero.escaped);
+        assert_eq!(zero.iterations, target_count);
         Ok(())
     }
 
     #[test]
     fn one_escapes() -> Result<(), Error> {
-        let i: Point = Point::from_parts(&Fix2x61::one(), &Fix2x61::zero());
+        let mut i: Point = Point::from_parts(&Fix2x61::one(), &Fix2x61::zero());
         let target_count = 1_000_000;
-        let r = i.iterate_n(target_count)?;
+        i.iterate_n(target_count)?;
 
-        assert_eq!(r.escaped, true);
-        assert_eq!(r.iterations, 1);
+        assert!(i.escaped);
+        assert_eq!(i.iterations, 1);
         Ok(())
     }
 
@@ -148,7 +147,7 @@ mod test {
         let mut c: Point = Point::from_parts(&(-Fix2x61::one()), &(0.5).try_into()?);
         c.iterate()?;
 
-        assert_eq!(c.escaped, false);
+        assert!(!c.escaped);
         assert_eq!(c.iterations, 1);
         assert_eq!(
             c.value,

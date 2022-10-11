@@ -3,7 +3,7 @@ use std::ops::{Add, Sub};
 use crate::complex::{FixError, FixResult};
 use crate::fix::fix2x61::Fix2x61;
 
-#[derive(Copy, Debug, Clone, PartialEq)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq)]
 pub struct Fix4x123(pub(crate) i128);
 
 impl Fix4x123 {
