@@ -20,7 +20,7 @@ version = "~0.3"
 features = ["wrap_help"]
 
 [dev-dependencies]
-criterion = "0.3.5"
+criterion = "0.5.1"
 iai = "0.1.1"
 
 [[bench]]
